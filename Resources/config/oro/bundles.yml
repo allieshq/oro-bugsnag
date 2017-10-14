@@ -1,0 +1,3 @@
+bundles:
+    - { name: Bugsnag\BugsnagBundle\BugsnagBundle, priority: 198 }
+    - { name: Allies\Bundle\OroBugsnagBundle\AlliesOroBugsnagBundle, priority: 200 }

@@ -1,0 +1,8 @@
+parameters:
+    allies_orobugsnag.handler.class:          Allies\Bundle\OroBugsnagBundle\Handler\BugsnagHandler
+    
+services:
+    allies_orobugsnag.handler:
+        class:      %allies_orobugsnag.handler.class%
+        calls:
+            - [setContainer, [@service_container]]
