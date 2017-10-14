@@ -6,95 +6,126 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Logger;
 use Bugsnag\Client as BugsnagClient;
+use Bugsnag\Report as BugsnagReport;
+use Oro\Bundle\ConfigBundle\Config\ConfigManager;
 
 class BugsnagHandler extends AbstractProcessingHandler
 {
-    /**
-     * monolog error codes mapped on to bugSnag severities.
-     * @var string[]
-     */
-    protected $severityMapping = array(
-        Logger::DEBUG     => 'info',
-        Logger::INFO      => 'info',
-        Logger::NOTICE    => 'info',
-        Logger::WARNING   => 'warning',
-        Logger::ERROR     => 'error',
-        Logger::CRITICAL  => 'error',
-        Logger::ALERT     => 'error',
-        Logger::EMERGENCY => 'error'
-    );
     
+/******************************************************************************
+ * PROPERTIES
+ ******************************************************************************/
+    
+    /**
+     * @var ContainerInterface
+     */
     protected $container;
     
     /**
-     * @var \Bugsnag\Client
+     * @var BugsnagClient
      */
     protected $client;
     
-    public function setContainer(ContainerInterface $container)
+    /**
+     * @var ConfigManager
+     */
+    protected $configManager;
+    
+/******************************************************************************
+ * STATICS
+ ******************************************************************************/
+    
+    /**
+     * @param integer $errorCode
+     * @return string
+     */
+    public static function getSeverity($errorCode)
     {
-        $this->container = $container;
-        
-        return $this;
-    }
-
-    public function getClient()
-    {
-        if (is_null($this->client)) {
-            if (!$this->container) {
-                throw new \RuntimeException("Container must be defined");
-            }
-
-            $this->client = $this->container->get('bugsnag');
+        switch ($errorCode) {
+            case Logger::EMERGENCY :
+            case Logger::ALERT :
+            case Logger::CRITICAL :
+            case Logger::ERROR :
+                return 'error';
+                break;
+            
+            case Logger::WARNING :
+                return 'warning';
+                break;
+            
+            case Logger::NOTICE :
+            case Logger::INFO :
+            case Logger::DEBUG :
+                return 'info';
+                break;
+            
+            default :
+                throw new \InvalidArgumentException(sprintf(
+                    "Unknown errorCode %s passed",
+                    (is_object($errorCode)) ? get_class($errorCode) : $errorCode
+                ));
+                break;
         }
-        
-        return $this->client;
     }
+    
+/******************************************************************************
+ * MAGIC
+ ******************************************************************************/
+    
+    /**
+     * @param BugsnagClient $client
+     * @param ConfigManager $configManager
+     * @param integer $level
+     * @param boolean $bubble
+     */
+    public function __construct(
+        BugsnagClient $client,
+        ConfigManager $configManager,
+        $level = Logger::ERROR,
+        $bubble = true
+    ) {
+        parent::__construct($level, $bubble);
+        
+        $this->client = $client;
+        $this->configManager = $configManager;
+    }
+    
+/******************************************************************************
+ * ACTIONS
+ ******************************************************************************/
 
     /**
-     * Writes the record down to the log of the implementing handler
-     *
-     * @param  array $record
+     * @param array $record
      * @return void
      */
     protected function write(array $record)
-    {
-        $severity = $this->getSeverity($record['level']);
-        if (isset($record['context']['exception'])) {
-            $this->getClient()->notifyException(
-                $record['context']['exception'],
-                function (\Bugsnag\Report $report) use ($record, $severity) {
-                    $report->setSeverity($severity);
-                    if (isset($record['extra'])) {
-                        $report->setMetaData($record['extra']);
-                    }
-                }
-            );
-        } else {
-            $this->getClient()->notifyError(
-                (string) $record['message'],
-                (string) $record['formatted'],
-                function (\Bugsnag\Report $report) use ($record, $severity) {
-                    $report->setSeverity($severity);
-                    if (isset($record['extra'])) {
-                        $report->setMetaData($record['extra']);
-                    }
-                }
-            );
+    {        
+        if (!in_array($record['level'], $this->configManager->get('allies_oro_bugsnag.reporting_level'))) {
+            return;
         }
-    }
-
-    /**
-     * Returns the Bugsnag severiry from a monolog error code.
-     * @param int $errorCode - one of the Logger:: constants.
-     * @return string
-     */
-    protected function getSeverity($errorCode)
-    {
-        if (isset($this->severityMapping[$errorCode])) {
-            return $this->severityMapping[$errorCode];
+        $severity = self::getSeverity($record['level']);
+        
+        if (isset($record['context']['exception'])) {
+            $this->client->notifyException(
+                $record['context']['exception'],
+                function (BugsnagReport $report) use ($record, $severity) {
+                    $report->setSeverity($severity);
+                    if (isset($record['extra'])) {
+                        $report->setMetaData($record['extra']);
+                    }
+                }
+            );
         } else {
-            return $this->severityMapping[Logger::ERROR];
+            $this->client->notifyError(
+                (string)$record['message'],
+                (string)$record['formatted'],
+                function (BugsnagReport $report) use ($record, $severity) {
+                    $report->setSeverity($severity);
+                    if (isset($record['extra'])) {
+                        $report->setMetaData($record['extra']);
+                    }
+                }
+            );
         }
     }
 }

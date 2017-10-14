@@ -1,0 +1,6 @@
+allies_oro_bugsnag:
+    system_configuration:
+        groups:
+            allies_oro_bugsnag.title:       Bugsnag
+        fields:
+            reporting_level.label:          Reporting Level

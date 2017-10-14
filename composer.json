@@ -7,11 +7,10 @@
     "require": {
         "php": ">=5.6",
         "oro/platform": "2.*",
-        "bugsnag/bugsnag-symfony": "1.*",
-        "mead-steve/mono-snag": "^3.0.0"
+        "bugsnag/bugsnag-symfony": "1.*"
     },
     "autoload": {
-        "psr-0": { "Allies\\Bundle\\LogViewerBundle": "src/" }
+        "psr-0": { "Allies\\Bundle\\OroBugsnagBundle": "src/" }
     },
     "target-dir": "src/Allies/Bundle/OroBugsnagBundle",
     "minimum-stability": "dev",

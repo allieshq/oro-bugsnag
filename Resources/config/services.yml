@@ -4,5 +4,33 @@ parameters:
 services:
     allies_orobugsnag.handler:
         class:      %allies_orobugsnag.handler.class%
-        calls:
-            - [setContainer, [@service_container]]
+        arguments:
+            - @allies_orobugsnag.client
+            - @oro_config.manager
+            
+    allies_orobugsnag.client:
+        parent: bugsnag
+        factory: ['@allies_orobugsnag.factory', make]
+        
+    allies_orobugsnag.factory:
+        class:  %bugsnag.factory%
+        arguments:
+            - @bugsnag.resolver
+            - null
+            - null
+            - '%bugsnag.api_key%'
+            - '%bugsnag.endpoint%'
+            - '%bugsnag.callbacks%'
+            - '%bugsnag.user%'
+            - '%bugsnag.app_type%'
+            - '%bugsnag.app_version%'
+            - '%bugsnag.batch_sending%'
+            - '%bugsnag.hostname%'
+            - '%bugsnag.send_code%'
+            - '%bugsnag.strip_path%'
+            - '%bugsnag.project_root%'
+            - '%kernel.root_dir%'
+            - '%kernel.environment%'
+            - '%bugsnag.release_stage%'
+            - '%bugsnag.notify_release_stages%'
+            - '%bugsnag.filters%'

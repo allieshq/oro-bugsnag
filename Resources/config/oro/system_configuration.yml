@@ -1,0 +1,33 @@
+system_configuration:
+    groups:
+        allies_oro_bugsnag:
+            title:      allies.oro_bugsnag.system_configuration.groups.allies_oro_bugsnag.title
+    fields:
+        allies_oro_bugsnag.reporting_level:
+            data_type:      string
+            type:           choice
+            priority:       10
+            options:
+                label:      allies.oro_bugsnag.system_configuration.fields.reporting_level.label
+                required:   false
+                multiple:   true
+                choices:
+                    600:    Emergency
+                    550:    Alert
+                    500:    Critical
+                    400:    Error
+                    300:    Warning
+                    250:    Notice
+                    200:    Info
+                    100:    Debug
+    tree:
+        system_configuration:
+            platform:
+                children:
+                    general_setup:
+                        children:
+                            application_settings:
+                                children:
+                                    allies_oro_bugsnag:
+                                        children:
+                                            - allies_oro_bugsnag.reporting_level
